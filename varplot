@@ -420,10 +420,11 @@ def usage():
     print >> f, "-w,--strokewidth: stroke width for normal variants [1]"
     print >> f, "-s,--eachplotheight : height of the plot for an individual (in cm) [0.4]"
     print >> f, "-g,--eachplotgap : vertical gap between plots of different individuals (in cm) [0.4]"
+    print >> f, "-r,--resolution  : number of bases to be drawn in 1 cm [1000]"
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt(argv[1:],"hdw:s:g:",["help","debug","strokewidth=", "eachplotheight=", "eachplotgap="])
+        opts, args = getopt(argv[1:],"hdw:s:g:r:",["help","debug","strokewidth=", "eachplotheight=", "eachplotgap=", "resolution"])
     except GetoptError, err:
         print str(err)
         usage()
@@ -453,6 +454,8 @@ if __name__ == "__main__":
             eachplotheight = float(a)
         elif o in ("-g", "--eachplotgap"):
             vgap = float(a)
+        elif o in ("-r", "--resolution"):
+            cm2bp = int(a)
         else:
             assert False, "unhandled option"
 
