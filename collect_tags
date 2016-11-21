@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+
+"""
+Input : A Genbank format file
+Output: All the header information for the tick
+"""
+
+from sys import argv, stderr, stdin, exit
+from getopt import getopt, GetoptError
+
+__author__ = "Aakrosh Ratan"
+__email__  = "ratan@bx.psu.edu"
+
+# do we want the debug information to be printed?
+debug_flag = False
+
+def main(filename):
+    file = open(filename, "r")
+
+    line = file.readline()
+    while line:
+        if line.startswith("ACCESSION"):
+            print "@GN=%s" % line.strip().split()[1]
+            while line.startswith("FEATURES") == False:
+                line = file.readline()
+            continue
+
+        if line.strip().startswith("source"):
+            tokens = line.strip().split()
+            print "@GL=%s" % tokens[1].split("..")[1]
+
+        if line.strip().startswith("tRNA"):
+            tokens = line.strip().split()
+
+            if tokens[1].startswith("complement"):
+                start = int(tokens[1][11:].split("..")[0])
+                stop  = int(tokens[1][11:].split("..")[1][:-1])
+            else:
+                start = int(tokens[1].split("..")[0])
+                stop  = int(tokens[1].split("..")[1])
+            
+            print "@GA=%d:%d::tRNA" % (start - 1, stop)
+
+        if line.strip().startswith("gene"):
+            tokens = line.strip().split()
+
+            if tokens[1].startswith("complement"):
+                start = int(tokens[1][11:].split("..")[0])
+                stop  = int(tokens[1][11:].split("..")[1][:-1])
+            else:
+                start = int(tokens[1].split("..")[0])
+                stop  = int(tokens[1].split("..")[1])
+
+            line = file.readline()
+            assert line.strip().startswith("/gene=")
+            name = line.strip()[7:-1]
+            
+            print "@GA=%d:%d:%s:gene" % (start-1,stop,name)
+
+        if line.strip().startswith("rRNA"):
+            tokens = line.strip().split()
+
+            if tokens[1].startswith("complement"):
+                start = int(tokens[1][11:].split("..")[0])
+                stop  = int(tokens[1][11:].split("..")[1][:-1])
+            else:
+                start = int(tokens[1].split("..")[0])
+                stop  = int(tokens[1].split("..")[1])
+           
+            line = file.readline()
+            # find the line with the product
+            while not line.strip().startswith("/product="):
+                line = file.readline()  
+            name = line.strip()[10:].split()[0]
+            print "@GA=%d:%d:%s:rRNA" % (start-1,stop,name)   
+
+        line = file.readline()
+    file.close()
+
+    print "@CL=rRNA:#262666"
+    print "@CL=tRNA:#94A7AB"
+    print "@CL=gene:#D20202"
+
+
+def usage():
+    f = stderr
+    print >> f, "usage:"
+    print >> f, "collect_tags [options] sequence.gb"
+    print >> f, "where the options are:"
+    print >> f, "-h,--help : print usage and quit"
+    print >> f, "-d,--debug: print debug information"
+
+if __name__ == "__main__":
+    try:
+        opts, args = getopt(argv[1:], "hd",["help", "debug"])
+    except GetoptError, err:
+        print str(err)
+        usage()
+        exit(2) 
+
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            usage()
+            exit()
+        elif o in ("-d", "--debug"):
+            debug_flag = True
+        else:
+            assert False, "unhandled option"
+
+    if len(args) != 1:
+        usage()
+        exit(3)
+
+    main(args[0])
