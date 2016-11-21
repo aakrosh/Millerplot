@@ -2,7 +2,7 @@
 
 """
 Input : A Genbank format file
-Output: All the header information for the tick
+Output: All the header information for the specfile
 """
 
 from sys import argv, stderr, stdin, exit

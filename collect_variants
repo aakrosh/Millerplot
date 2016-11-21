@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+
+"""
+Input : A VCF file
+Output: All the variants in the format required in varplot spec file
+"""
+
+from sys import argv, stderr, stdin, exit
+from getopt import getopt, GetoptError
+
+import vcf
+
+__author__ = "Aakrosh Ratan"
+__email__  = "ratan@bx.psu.edu"
+
+# do we want the debug information to be printed?
+debug_flag = False
+
+def main(filename, template):
+    samples = {}
+    vcf_reader = vcf.Reader(open(filename, 'r'))
+    for record in vcf_reader:
+        for sample in record.samples:
+            if sample['GT'] == "1/1":
+                if sample.sample not in samples:
+                    samples[sample.sample] = []
+                samples[sample.sample].append(record.POS-1) 
+
+    if template == None:
+        order = samples.items()
+    else:
+        order = []
+        vcf_reader = vcf.Reader(open(template, 'r'))
+        for sample in vcf_reader.samples:
+            order.append(sample)
+
+    for sample in order:
+        positions = samples[sample]
+        output = [sample]
+        addendum = [str(x) for x in positions]
+        output.extend(addendum)
+        print " ".join(output)
+
+def usage():
+    f = stderr
+    print >> f, "usage:"
+    print >> f, "collect_variants [options] variants.vcf"
+    print >> f, "where the options are:"
+    print >> f, "-h,--help : print usage and quit"
+    print >> f, "-d,--debug: print debug information"
+    print >> f, "-t,--template: VCF file with the order of the samples to output"
+
+if __name__ == "__main__":
+    try:
+        opts, args = getopt(argv[1:], "hdt:",["help", "debug", "template="])
+    except GetoptError, err:
+        print str(err)
+        usage()
+        exit(2)
+
+    template = None 
+
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            usage()
+            exit()
+        elif o in ("-d", "--debug"):
+            debug_flag = True
+        elif o in ("-t", "--template"):
+            template = a
+        else:
+            assert False, "unhandled option"
+
+    if len(args) != 1:
+        usage()
+        exit(3)
+
+    main(args[0], template)
